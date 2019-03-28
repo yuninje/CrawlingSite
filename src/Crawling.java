@@ -23,26 +23,36 @@ public class Crawling {
     URL imgUrl;
     BufferedImage bi = null;
 
+    String siteBaseUrl="";
+    String siteUrl="";
     String saveLocation = "";
     String saveFolder = "";
     String html = "";
     String imgName = "";
 
+    int amount = 0;
+
     public Crawling() {
         scanner  =new Scanner(System.in);
         crawling();
-        //crawlingManpeace(selectAmount());
+        //crawlingManpeace(setAmount());
     }
 
     void crawling(){
         switch (selectSite()) {
             case 1:// http://10000img.com/
                 System.out.println("-------  10000img   선택  -------");
-                crawling10000img(selectAmount());
+                siteBaseUrl = SITE_BASEURL_10000IMG;
+                siteUrl = SITE_URL_10000IMG;
+                setAmount();
+                crawling10000img();
                 break;
             case 2:// http://manpeace.net/
                 System.out.println("-------  manpeace   선택  -------");
-                crawlingManpeace(selectAmount());
+                siteBaseUrl = SITE_BASEURL_MANPEACE;
+                siteUrl = SITE_URL_MANPEACE;
+                setAmount();
+                crawlingManpeace();
                 break;
             default:
                 System.out.println("잘못 입력");
@@ -57,22 +67,21 @@ public class Crawling {
         return scanner.nextInt();
     }
 
-    int selectAmount() {
+    void setAmount() {
         System.out.print("이미지 크롤링 할 이미지 갯수 입력 : ");
-        return scanner.nextInt();
+        amount = scanner.nextInt();
     }
 
     String getFolderName(String url){
         String folderName;
         int idx = url.indexOf("://");
         folderName = url.substring(idx+3, url.indexOf("."));
-        System.out.println("getFolderName : "+folderName);
         return folderName + "/";
     }
 
-    public void crawling10000img(int amount) {
+    public void crawling10000img() {
         try {
-            saveLocation = SAVE_LOCATION + getFolderName(SITE_BASEURL_10000IMG);
+            saveLocation = SAVE_LOCATION + getFolderName(siteBaseUrl);
 
             folder = new File(saveLocation);
             if(!folder.exists()){
@@ -80,10 +89,10 @@ public class Crawling {
             }
 
             for (int i = 0; i < amount; i++) {
-                doc = Jsoup.connect(SITE_URL_10000IMG).get();
+                doc = Jsoup.connect(siteUrl).get();
                 imgName = doc.select("img").first().attr("src");
-                imgUrl = new URL(SITE_BASEURL_10000IMG + imgName);
-                System.out.println("imgUrl : " + SITE_BASEURL_10000IMG + imgName);
+                imgUrl = new URL(siteBaseUrl + imgName);
+                System.out.println("imgUrl : " + siteBaseUrl + imgName);
 
                 bi = ImageIO.read(imgUrl);
                 imgName = imgName.replace("/", "");
@@ -92,14 +101,14 @@ public class Crawling {
 
                 image = new File(saveLocation + imgName);
                 ImageIO.write(bi, "jpg", image);
-                System.out.println("File Name : " + imgName + "      저장\n");
+                System.out.println("File Name : " + imgName + "      저장 완료\n");
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void crawlingManpeace(int amount) {
+    public void crawlingManpeace() {
         try {
 
 
