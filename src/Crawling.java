@@ -132,7 +132,7 @@ public class Crawling{
         bi = ImageIO.read(imgUrl);
         imgFileName = imgString.replace("/", "");
 
-        image = new File(saveLocation + imgString.substring(imgString.length()-10,imgString.length()));
+        image = new File(saveLocation + imgFileName.substring(imgFileName.length()-10,imgFileName.length()));
 
         ImageIO.write(bi, "jpg", image);
         System.out.println("파일 저장 위치 : "+saveLocation + imgFileName);
@@ -145,7 +145,6 @@ public class Crawling{
         System.out.println(videoFileName);
 
         downloadUsingNIO(videoUrl, saveLocation);
-
     }
 
     private static void downloadUsingNIO(URL url, String file) throws Exception {
@@ -177,7 +176,7 @@ public class Crawling{
         }
 
         System.out.println(saveLocation);
-        doc = Jsoup.connect("http://manpeace.net/bbs/board.php?bo_table=jage&wr_id=135194").get();
+        doc = Jsoup.connect("http://manpeace.net/bbs/board.php?bo_table=jage&wr_id=135129").get();
         elements = doc.select("div").eq(36).select("div").eq(7);
 
         getDataUrl_Manpeace();
