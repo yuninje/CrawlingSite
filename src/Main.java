@@ -1,10 +1,4 @@
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.net.URL;
 import java.util.Scanner;
 
 public class Main {
@@ -17,6 +11,9 @@ public class Main {
     static File outputFile;
     public static void main(String args[]) throws Exception{
 
-        new Crawling();
+        //new DoLogin_tistory();
+        new DoLogin_manpeace();
+        //new Crawling();
+        //new Window();
     }
 }

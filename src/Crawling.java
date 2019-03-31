@@ -12,6 +12,8 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class Crawling{
@@ -23,13 +25,11 @@ public class Crawling{
 
     static Scanner scanner;
     static Crawling crawling;
-    static File image;
-    static File video;
+    static File file;
     static File folder;
 
     Document doc;
-    URL imgUrl;
-    URL videoUrl;
+    URL fileUrl;
     BufferedImage bi = null;
     BufferedInputStream bufferedInputStream;
     FileOutputStream fileOutputStream;
@@ -39,20 +39,25 @@ public class Crawling{
     Elements elementsImg;
     Elements elementsA;
 
+    List<Content> contents =  new ArrayList();
+    Content content = new Content();
+
     String siteBaseUrl = "";
     String siteUrl = "";
     String saveLocation = "";
-
     String imgString = "";
     String videoString = "";
-    String imgFileName= "";
     String videoFileName= "";
+    String imgFileName= "";
+    String postNum = "";
 
     int elementsVideoCount;
     int elementsImgCount;
     int elementsACount;
     int selectSite = 0;
     int amount = 0;
+    int siteNum = 2;
+    int num = 1;
 
     public Crawling() throws Exception{
         scanner = new Scanner(System.in);
@@ -63,7 +68,7 @@ public class Crawling{
     }
 
     void crawling() throws Exception{
-        switch (scanner.nextInt()) {
+        switch (siteNum = scanner.nextInt()) {
             case 1:// http://10000img.com/
                 System.out.println("-------  10000img   선택  -------");
                 siteBaseUrl = SITE_BASEURL_10000IMG;
@@ -118,33 +123,70 @@ public class Crawling{
             }
 
             for (int i = 0; i < amount; i++) {
-                getImgUrl_10000img();
-                downImage();
+                downloadFile(saveLocation);
             }
     }
 
-    void downImage() throws Exception{
-        if(imgString.substring(0,1).equals("/")){
-            imgString = siteBaseUrl+imgString;
+    void downloadFile(String location) throws Exception{
+        String extension = "";
+        folder = new File(location);
+        if (!folder.exists()) {
+            folder.mkdir();
         }
-        imgUrl = new URL(imgString);
 
-        bi = ImageIO.read(imgUrl);
-        imgFileName = imgString.replace("/", "");
+        if(siteNum == 2) {      // manpeace
+            postNum = siteUrl.split("wr_id=")[1];
+            folder = new File(location+postNum);
+            if(!folder.exists()){
+                folder.mkdir();
+            }
+        }
+        for(Content c : contents){
+            if (c.urlString.substring(0, 1).equals("/")) {
+                c.urlString = siteBaseUrl+c.urlString ;
+            }
+            extension ="."+
+                    c.urlString.substring(c.urlString.length()-6,c.urlString.length()).split("\\.")[1];
 
-        image = new File(saveLocation + imgFileName.substring(imgFileName.length()-10,imgFileName.length()));
 
-        ImageIO.write(bi, "jpg", image);
-        System.out.println("파일 저장 위치 : "+saveLocation + imgFileName);
-        System.out.println("File Name : " + imgFileName + "      저장 완료\n");
+            fileUrl = new URL(c.urlString);
+
+            if(c.type == 1) {
+                downImage(c.urlString, location+postNum+"/", extension);
+            }else {
+                downVideo(c.urlString, location+postNum+"/",extension);
+            }
+            num ++;
+        }
+
     }
 
-    void downVideo() throws Exception{
+    void downImage(String imgString, String location, String extension) throws Exception{
+
+        if(imgString.substring(0,1).equals("/")){
+            fileUrl = new URL(siteBaseUrl+imgString);
+        }else{
+            fileUrl = new URL(imgString);
+        }
+
+        bi = ImageIO.read(fileUrl);
+        imgFileName = imgString.replace("/", "");
+
+        file = new File(location + postNum + "-"+num + extension);
+
+
+        ImageIO.write(bi, "jpg", file);
+        System.out.println("파일 저장 위치 : "+location);
+        System.out.println("파일 절대 주소 : "+location + imgFileName);
+        System.out.println("Content Name : " + imgFileName + "      저장 완료\n");
+    }
+
+    void downVideo(String videoString, String location, String extension) throws Exception{
         videoFileName = videoString.replace("/", "");
-        video = new File(saveLocation + videoFileName);
+        file = new File(location + postNum + "-"+num + extension);
         System.out.println(videoFileName);
 
-        downloadUsingNIO(videoUrl, saveLocation);
+        downloadUsingNIO(fileUrl, location);
     }
 
     private static void downloadUsingNIO(URL url, String file) throws Exception {
@@ -167,40 +209,25 @@ public class Crawling{
         fis.close();
         bis.close();
     }
+
     public void crawlingManpeace() throws Exception{
         saveLocation = SAVE_LOCATION + getFolderName(siteBaseUrl);
 
-        folder = new File(saveLocation);
-        if (!folder.exists()) {
-            folder.mkdir();
-        }
-
-        System.out.println(saveLocation);
-        doc = Jsoup.connect("http://manpeace.net/bbs/board.php?bo_table=jage&wr_id=135129").get();
+        siteUrl = "http://manpeace.net/bbs/board.php?bo_table=ssam&wr_id=16372";
+        doc = Jsoup.connect(siteUrl).get();
         elements = doc.select("div").eq(36).select("div").eq(7);
-
         getDataUrl_Manpeace();
-
-//        for(int i = 1 ; i<elementsImgCount; i++){
-//            downImage();
-//        }
-//        for (int i = 0; i<elementsVideoCount; i++){
-//            downVideo();
-//        }
-
-
+        downloadFile(saveLocation);
     }
 
     void getImgUrl_10000img() throws Exception {
         doc = Jsoup.connect(siteUrl).get();
-        imgString = doc.select("img").first().attr("src");
-        imgUrl = new URL(siteBaseUrl + imgString);
-        System.out.println("imgUrl : " + siteBaseUrl + imgString);
+        contents.add(new Content(doc.select("img").first().attr("src"), 1));
     }
 
     void getDataUrl_Manpeace() throws Exception{
         int i;
-        elementsVideo = elements.select("video").select("source[src$=.mp4]");
+        elementsVideo = elements.select("file").select("source[src$=.mp4]");
         elementsImg = elements.select("img");
         elementsA = elements.select("a");
 
@@ -208,26 +235,23 @@ public class Crawling{
         elementsImgCount = elementsImg.indexOf(elementsImg.last());
         elementsACount = elementsA.indexOf(elementsA.last());
 
-        System.out.println("video src ===========================================");
+        System.out.println("file src ===========================================");
         i = 0;
         for (Element element : elementsVideo) {
             videoString = element.attr("src");
-            videoUrl = new URL(videoString);
+            fileUrl = new URL(videoString);
             //downVideo();
             System.out.println((i++) + " - " + videoString);
+            contents.add(new Content(videoString, 2));
         }
         System.out.println();
 
-        System.out.println("image src ===========================================");
+        System.out.println("file src ===========================================");
         i = 0;
-        System.out.println(elementsImg);
-
         for (Element element : elementsImg) {
             imgString = element.attr("src");
-
             System.out.println((i++) + " - " + imgString);
-
-            downImage();
+            contents.add(new Content(imgString, 1));
         }
         System.out.println();
 
@@ -235,11 +259,8 @@ public class Crawling{
         i = 0;
         for (Element element : elementsA) {
             imgString = element.attr("src");
-            imgUrl = new URL(imgString);
             System.out.println((i++) + " - " + element.attr("href"));
-
         }
         System.out.println();
     }
-
 }
