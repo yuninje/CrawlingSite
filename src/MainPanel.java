@@ -80,8 +80,8 @@ public class MainPanel extends JPanel {
         jBtnCrawling = new JButton(imgDownload);
         jLLoginID = new JLabel("ID");
         jLLoginPW = new JLabel("PW");
-        jTLoginID = new JTextField("dbsdlswp11");
-        jTLoginPW = new JPasswordField("1111");
+        jTLoginID = new JTextField("");
+        jTLoginPW = new JPasswordField("");
         jLStartDate = new JLabel("Start Date ( **** . ** . ** )");
         jLEndDate = new JLabel("End Date ( **** . ** . ** )");
         jTStartDate = new JTextField("2019.03.30");
