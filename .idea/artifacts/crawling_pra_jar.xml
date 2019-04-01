@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="crawling_pra:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/crawling_pra_jar</output-path>
+    <root id="archive" name="crawling_pra.jar">
+      <element id="module-output" name="crawling_pra" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../../Library/JAVA/jsoup-1.11.3.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
