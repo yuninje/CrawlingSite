@@ -7,28 +7,37 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
+import java.util.Properties;
+
+import org.jdatepicker.impl.*;
 
 public class MainPanel extends JPanel {
+    Crawling crawling;
     public static final int BORDER_THICK = 20;
     private String[] siteArray = {"manpeace", "aaa"};
     public static String[] genreArray_mampeace = {"스포츠", "연예인", "인물", "므흣", "유저짤"};
+
+    private static final String loginID = "dbsdlswp11";
+    private static final String loginPW = "1111";
+    String saveLocation = "";
+    String startDate = "";
+    String endDate = "";
+
     private JPanel jPSet;
     private JPanel jPInput;
     private JPanel jPGenre;
     private JPanel jPLoading;
     private JPanel jPSaveLocation;
 
-    private JLabel jLLoginID;
-    private JLabel jLLoginPW;
-    private JLabel jLEndDate;
-    private JLabel jLStartDate;
     public JTextArea jTSaveLocation;
-    public static JLabel jLPercent;
+    public static JTextArea jTProgressText;
 
-    public static JTextField jTLoginID;
-    public static JPasswordField jTLoginPW;
-    private JTextField jTStartDate;
-    private JTextField jTEndDate;
+
+    JLabel jLStartDate;
+    JLabel jLEndDate;
+    JPanel jPanel1;
+    JPanel jPanel2;
+
     private JComboBox jCBSite;
     public static JProgressBar jProgressBar;
     private JCheckBox jCB1_manpeace;    // 스포츠 bo_table=ssam
@@ -38,7 +47,7 @@ public class MainPanel extends JPanel {
     private JCheckBox jCB5_manpeace;    // 유저짤 bo_table=jap
     public static JButton jBtnCrawling;
     public static JButton jBtnSaveLocation;
-
+    JScrollPane jScrollPane;
     private JFileChooser jFileChooser;
 
     public static ImageIcon imgDownload = new ImageIcon("./image/download.png");//"./image/download.png"
@@ -49,9 +58,22 @@ public class MainPanel extends JPanel {
     private TitledBorder borderDate;
     private TitledBorder borderGenre;
 
+    GridBagConstraints gbc = new GridBagConstraints();
+    UtilDateModel modelSD;
+    Properties propertiesSD;
+    JDatePanelImpl jDatePanelSD;
+    JDatePickerImpl jDatePickerSD;
 
-    int btnCondition = 1; // 1 : download, 2 : downloading,  3 : complete
+    UtilDateModel modelED;
+    Properties propertiesED;
+    JDatePanelImpl jDatePanelED;
+    JDatePickerImpl jDatePickerED;
+
+    public static int btnCondition = 1; // 1 : download, 2 : downloading,  3 : complete
     public static boolean[] cBCondition = {false, false, false, false, false};
+    public static boolean[] falseArray = {false, false, false, false, false};
+    boolean setLocationFlag = false;
+
     CallBackEvent callBackEvent;
 
     public MainPanel() {
@@ -78,17 +100,24 @@ public class MainPanel extends JPanel {
 
         jBtnSaveLocation = new JButton(imgSL);
         jBtnCrawling = new JButton(imgDownload);
-        jLLoginID = new JLabel("ID");
-        jLLoginPW = new JLabel("PW");
-        jTLoginID = new JTextField("dbsdlswp11");
-        jTLoginPW = new JPasswordField("1111");
-        jLStartDate = new JLabel("Start Date ( **** . ** . ** )");
-        jLEndDate = new JLabel("End Date ( **** . ** . ** )");
-        jTStartDate = new JTextField("2019.03.30");
-        jTEndDate = new JTextField("2019.03.30");
+        jLStartDate = new JLabel("Start Date");
+        jLEndDate = new JLabel("End Date");
+        jPanel1 = new JPanel();
+        jPanel2 = new JPanel();
 
-        jTSaveLocation = new JTextArea("버튼을 눌러 저장공간을 정하세요.");
-        jLPercent = new JLabel("");
+        modelSD = new UtilDateModel();
+        propertiesSD = new Properties();
+        jDatePanelSD = new JDatePanelImpl(modelSD, propertiesSD);
+        jDatePickerSD = new JDatePickerImpl(jDatePanelSD, new DateLabelFormatter());
+
+        modelED = new UtilDateModel();
+        propertiesED = new Properties();
+        jDatePanelED = new JDatePanelImpl(modelED, propertiesED);
+        jDatePickerED = new JDatePickerImpl(jDatePanelED, new DateLabelFormatter());
+
+        jTSaveLocation = new JTextArea("오른쪽 버튼을 눌러 저장공간을 정하세요.");
+        jTProgressText = new JTextArea("Download File List");
+        jScrollPane = new JScrollPane(jTProgressText);
 
         jCBSite = new JComboBox<>(siteArray);
         jProgressBar = new JProgressBar();
@@ -100,23 +129,41 @@ public class MainPanel extends JPanel {
         jCB5_manpeace = new JCheckBox(genreArray_mampeace[4]);    // 유저짤 bo_table=jap
 
         jFileChooser = new JFileChooser();
-
         borderDate = new TitledBorder("");
         borderGenre = new TitledBorder("게시판");
     }
 
+
     public void setComponent() {
+        propertiesSD.put("text.today", "Today");
+        propertiesSD.put("text.month", "Month");
+        propertiesSD.put("text.year", "Year");
+        propertiesED.put("text.today", "Today");
+        propertiesED.put("text.month", "Month");
+        propertiesED.put("text.year", "Year");
+
         borderDate.setTitleColor(Color.BLACK);
         borderDate.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         borderDate.setTitleJustification(TitledBorder.CENTER);
+
         borderGenre.setTitleFont(new Font("aa", Font.BOLD, 20));
         borderGenre.setTitleColor(Color.BLACK);
         borderGenre.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         borderGenre.setTitleJustification(TitledBorder.CENTER);
 
+
+        jLStartDate.setPreferredSize(new Dimension(60, 40));
+        jLEndDate.setPreferredSize(new Dimension(60, 40));
+        jLStartDate.setVerticalAlignment(SwingConstants.CENTER);
+        jLStartDate.setHorizontalAlignment(SwingConstants.CENTER);
+        jLEndDate.setVerticalAlignment(SwingConstants.CENTER);
+        jLEndDate.setHorizontalAlignment(SwingConstants.CENTER);
+
+
         // set JProgressBar option
-        jProgressBar.setPreferredSize(new Dimension(270, 30));
+        jProgressBar.setPreferredSize(new Dimension(300, 30));
         jProgressBar.setValue(0);
+        jProgressBar.setBorder(borderDate);
 
         // set JBtnCrawling option
         jBtnCrawling.setPreferredSize(new Dimension(imgDownload.getIconWidth(), imgDownload.getIconHeight()));
@@ -135,48 +182,29 @@ public class MainPanel extends JPanel {
         jBtnSaveLocation.setContentAreaFilled(false);  // btn 내용영역 채우기 X
         jBtnSaveLocation.setFocusPainted(false);  // btn 클릭시 focus 테두리 X
 
-        jLLoginID.setVerticalAlignment(SwingConstants.CENTER);
-        jLLoginID.setHorizontalAlignment(SwingConstants.CENTER);
-        jLLoginPW.setVerticalAlignment(SwingConstants.CENTER);
-        jLLoginPW.setHorizontalAlignment(SwingConstants.CENTER);
 
-        jTLoginPW.setHorizontalAlignment(JTextField.CENTER);
-        jTLoginID.setHorizontalAlignment(JTextField.CENTER);
-
-        jLLoginID.setBorder(borderDate);
-        jTLoginID.setBorder(borderDate);
-        jLLoginPW.setBorder(borderDate);
-        jTLoginPW.setBorder(borderDate);
-
-        jLStartDate.setVerticalAlignment(SwingConstants.CENTER);
-        jLStartDate.setHorizontalAlignment(SwingConstants.CENTER);
-        jTStartDate.setHorizontalAlignment(JTextField.CENTER);
-        jLEndDate.setVerticalAlignment(SwingConstants.CENTER);
-        jLEndDate.setHorizontalAlignment(SwingConstants.CENTER);
-        jTEndDate.setHorizontalAlignment(JTextField.CENTER);
-
-        jLStartDate.setBorder(borderDate);
-        jTStartDate.setBorder(borderDate);
-        jLEndDate.setBorder(borderDate);
-        jTEndDate.setBorder(borderDate);
-
+        //jTSaveLocation
         jTSaveLocation.setPreferredSize(new Dimension(260, 60));
         jTSaveLocation.setLineWrap(true);
-        jLEndDate.setVerticalAlignment(SwingConstants.CENTER);
-        jLEndDate.setHorizontalAlignment(SwingConstants.CENTER);
-        jTEndDate.setHorizontalAlignment(JTextField.CENTER);
+        jTSaveLocation.setBorder(borderDate);
 
+
+        jTProgressText.setLineWrap(true);
+        jTProgressText.setBorder(borderDate);
+        jTProgressText.setFont(new Font("aaa", Font.BOLD, 15));
+
+        jScrollPane.setPreferredSize(new Dimension(300, 60));
+
+        //jBtnSaveLocation
         jBtnSaveLocation.setBorder(borderDate);
 
+
+        //jFileChooser
         jFileChooser.setCurrentDirectory(new File("/")); // 현재 사용 디렉토리를 지정
         jFileChooser.setAcceptAllFileFilterUsed(true);   // Fileter 모든 파일 적용
         jFileChooser.setDialogTitle("타이틀"); // 창의 제목
         jFileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES); // 파일 선택 모드
 
-        jLPercent.setPreferredSize(new Dimension(40, 30));
-        jLPercent.setVerticalAlignment(SwingConstants.CENTER);
-        jLPercent.setHorizontalAlignment(SwingConstants.CENTER);
-        jLPercent.setHorizontalAlignment(JTextField.CENTER);
 
         //checkbox
         jCB1_manpeace.addItemListener(cBListener);
@@ -185,19 +213,21 @@ public class MainPanel extends JPanel {
         jCB4_manpeace.addItemListener(cBListener);
         jCB5_manpeace.addItemListener(cBListener);
 
-        //jPInput
-        jPInput.setLayout(new GridLayout(4, 2));
-        jPInput.setPreferredSize(new Dimension(300, 160));
-        jPInput.add(jLLoginID);
-        jPInput.add(jLLoginPW);
-        jPInput.add(jTLoginID);
-        jPInput.add(jTLoginPW);
-        jPInput.add(jLStartDate);
-        jPInput.add(jLEndDate);
-        jPInput.add(jTStartDate);
-        jPInput.add(jTEndDate);
-        jPInput.setBorder(borderDate);
+        jLStartDate.setPreferredSize(new Dimension(60, 30));
+        jPanel1.add(jLStartDate);
+        jPanel1.add(jDatePickerSD);
 
+
+        jLEndDate.setPreferredSize(new Dimension(60, 30));
+        jPanel2.add(jLEndDate);
+        jPanel2.add(jDatePickerED);
+
+        //jPInput
+        jPInput.setLayout(new GridLayout(2, 1));
+        jPInput.setPreferredSize(new Dimension(300, 80));
+
+        jPInput.add(jPanel1);
+        jPInput.add(jPanel2);
 
         //jPGenre
         jPGenre.setLayout(new GridLayout(3, 3));
@@ -217,7 +247,7 @@ public class MainPanel extends JPanel {
 
         //jPSet
         jPSet.setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
+
         gbc.gridx = 0;
         gbc.gridy = 0;
         jPSet.add(jPInput, gbc);
@@ -230,11 +260,13 @@ public class MainPanel extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 3;
         jPSet.add(jBtnCrawling, gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        jPSet.add(jScrollPane, gbc);
 
         //jPLoading
         jPLoading.setLayout(new FlowLayout());
         jPLoading.add(jProgressBar);
-        jPLoading.add(jLPercent);
 
         //MainPanel
         setLayout(new BorderLayout());
@@ -259,101 +291,121 @@ public class MainPanel extends JPanel {
         return folderPath;
     }
 
-        public static String getPW (JPasswordField jTLoginPW){
-            String password = "";
-            char[] pw = jTLoginPW.getPassword();
+    public static String getPW(JPasswordField jTLoginPW) {
+        String password = "";
+        char[] pw = jTLoginPW.getPassword();
 
-            for (char c : pw) {
-                Character.toString(c);
-                password += c;
-            }
-
-            return password;
+        for (char c : pw) {
+            Character.toString(c);
+            password += c;
         }
 
-        public interface CallBackEvent {
-            public void callBackMethod();
-        }
-
-        ActionListener btnClickListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (e.getSource().equals(jBtnCrawling)) {
-                    switch (btnCondition) {
-                        case 1:
-                            jBtnCrawling.setIcon(imgDownloading);
-                            btnCondition = 2;
-                            try {
-                                if (jBtnCrawling.getIcon().equals(imgDownloading)) {
-                                    System.out.println("아이디 : " + jTLoginID.getText() + "   비번 : " + getPW(jTLoginPW));
-                                    Crawling crawling = new Crawling(callBackEvent, jTLoginID.getText(), getPW(jTLoginPW), jTStartDate.getText(), jTEndDate.getText(), jTSaveLocation.getText()+"/");
-                                    crawling.start();
-                                }
-                            } catch (Exception e1) {
-                                e1.printStackTrace();
-                            }
-                            // crawling
-                            break;
-                        case 2:
-                            System.out.println("click downloading");
-                            // no action
-                            break;
-                        case 3:
-                            System.out.println("click complete");
-                            jBtnCrawling.setIcon(imgDownload);
-                            break;
-                        default:
-                            System.out.println();
-                    }
-                } else if (e.getSource().equals(jBtnSaveLocation)) {
-                    jTSaveLocation.setText(fileChooser());
-                }
-            }
-        };
-        ItemListener cBListener = new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                if (e.getSource().equals(jCB1_manpeace)) {
-                    if (jCB1_manpeace.isSelected()) {
-                        System.out.println("jCB1_manpeace 체크 !");
-                        cBCondition[0] = true;
-                    } else {
-                        System.out.println("jCB1_manpeace 언체크 !");
-                        cBCondition[0] = false;
-                    }
-                } else if (e.getSource().equals(jCB2_manpeace)) {
-                    if (jCB2_manpeace.isSelected()) {
-                        System.out.println("jCB2_manpeace 체크 !");
-                        cBCondition[1] = true;
-                    } else {
-                        System.out.println("jCB2_manpeace 언체크 !");
-                        cBCondition[1] = false;
-                    }
-                } else if (e.getSource().equals(jCB3_manpeace)) {
-                    if (jCB3_manpeace.isSelected()) {
-                        System.out.println("jCB3_manpeace 체크 !");
-                        cBCondition[2] = true;
-                    } else {
-                        System.out.println("jCB3_manpeace 언체크 !");
-                        cBCondition[2] = false;
-                    }
-                } else if (e.getSource().equals(jCB4_manpeace)) {
-                    if (jCB4_manpeace.isSelected()) {
-                        System.out.println("jCB4_manpeace 체크 !");
-                        cBCondition[3] = true;
-                    } else {
-                        System.out.println("jCB4_manpeace 언체크 !");
-                        cBCondition[3] = false;
-                    }
-                } else if (e.getSource().equals(jCB5_manpeace)) {
-                    if (jCB5_manpeace.isSelected()) {
-                        System.out.println("jCB5_manpeace 체크 !");
-                        cBCondition[4] = true;
-                    } else {
-                        System.out.println("jCB5_manpeace 언체크 !");
-                        cBCondition[4] = false;
-                    }
-                }
-            }
-        };
+        return password;
     }
+
+    public interface CallBackEvent {
+        public void callBackMethod();
+    }
+
+    ActionListener btnClickListener = new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (e.getSource().equals(jBtnCrawling)) {
+                if (setLocationFlag ) {
+                    startDate = jDatePickerSD.getJFormattedTextField().getText();
+                    endDate = jDatePickerED.getJFormattedTextField().getText();
+                    if(!startDate.equals("") && !endDate.equals("") && Crawling.compareDate(startDate,endDate)) {
+                        if(falseArray != cBCondition) {
+                            switch (btnCondition) {
+                                case 1:
+                                    jBtnCrawling.setIcon(imgDownloading);
+                                    btnCondition = 2;
+
+                                    try {
+                                        crawling = new Crawling(callBackEvent, loginID, loginPW,startDate, endDate, saveLocation);
+                                        crawling.start();
+                                    } catch (Exception e1) {
+                                        e1.printStackTrace();
+                                    }
+                                    break;
+                                case 2:
+                                    System.out.println("click downloading");
+                                    // no action
+                                    break;
+                                case 3:
+                                    jBtnCrawling.setIcon(imgDownload);
+                                    btnCondition = 1;
+                                    break;
+                                default:
+                                    System.out.println();
+                            }
+                        }else{
+                            JOptionPane.showMessageDialog(Main.window, "선택한 게시판을 확인하세요.");
+                        }
+                    }else{
+                        JOptionPane.showMessageDialog(Main.window, "입력하신 날짜를 확인하세요.");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(Main.window, "저장할 폴더를 선택해주세요");
+                }
+            } else if (e.getSource().equals(jBtnSaveLocation)) {
+                saveLocation = fileChooser() + "/";
+                if (saveLocation.equals("/")) {
+                } else {
+                    jTSaveLocation.setText(saveLocation);
+                    jTSaveLocation.setFont(new Font("a", Font.BOLD, 10));
+                    setLocationFlag = true;
+                }
+
+            }
+        }
+    };
+
+
+    ItemListener cBListener = new ItemListener() {
+        @Override
+        public void itemStateChanged(ItemEvent e) {
+            if (e.getSource().equals(jCB1_manpeace)) {
+                if (jCB1_manpeace.isSelected()) {
+                    System.out.println("jCB1_manpeace 체크 !");
+                    cBCondition[0] = true;
+                } else {
+                    System.out.println("jCB1_manpeace 언체크 !");
+                    cBCondition[0] = false;
+                }
+            } else if (e.getSource().equals(jCB2_manpeace)) {
+                if (jCB2_manpeace.isSelected()) {
+                    System.out.println("jCB2_manpeace 체크 !");
+                    cBCondition[1] = true;
+                } else {
+                    System.out.println("jCB2_manpeace 언체크 !");
+                    cBCondition[1] = false;
+                }
+            } else if (e.getSource().equals(jCB3_manpeace)) {
+                if (jCB3_manpeace.isSelected()) {
+                    System.out.println("jCB3_manpeace 체크 !");
+                    cBCondition[2] = true;
+                } else {
+                    System.out.println("jCB3_manpeace 언체크 !");
+                    cBCondition[2] = false;
+                }
+            } else if (e.getSource().equals(jCB4_manpeace)) {
+                if (jCB4_manpeace.isSelected()) {
+                    System.out.println("jCB4_manpeace 체크 !");
+                    cBCondition[3] = true;
+                } else {
+                    System.out.println("jCB4_manpeace 언체크 !");
+                    cBCondition[3] = false;
+                }
+            } else if (e.getSource().equals(jCB5_manpeace)) {
+                if (jCB5_manpeace.isSelected()) {
+                    System.out.println("jCB5_manpeace 체크 !");
+                    cBCondition[4] = true;
+                } else {
+                    System.out.println("jCB5_manpeace 언체크 !");
+                    cBCondition[4] = false;
+                }
+            }
+        }
+    };
+}

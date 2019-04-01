@@ -23,6 +23,8 @@ public class Crawling extends Thread {
     private static Connection.Response response;
     public static Map<String, String> loginCookie;
 
+    private static String progressText = "";
+
     static File file;
     static File folder;
 
@@ -63,9 +65,8 @@ public class Crawling extends Thread {
     int elementsACount;
     int num = 1;
 
-    int total =    contentList.size();
-    int done = 0;
-
+    int total;
+    int done;
     private MainPanel.CallBackEvent callbackEvent;
 
     public Crawling(MainPanel.CallBackEvent event, String loginID, String loginPW, String startDate, String endDate, String saveLocation) throws Exception {
@@ -78,14 +79,11 @@ public class Crawling extends Thread {
         this.startDate = startDate;
         this.endDate = endDate;
         this.saveLocation = saveLocation;
-        //this.saveLocation = saveLocation
-
 
         //로그인
         getToken();
         getSessionID();
         mainDocument = getDocument(SITE_BASE_URL);
-
     }
 
     public void run() {
@@ -97,20 +95,28 @@ public class Crawling extends Thread {
                     System.out.println("================================================================================================    " + MainPanel.genreArray_mampeace[arrayIndex] + "     ===========");
 
                     setTotalPostList(genreUrl);
+                    printPostList();
                     filtOutPost();
+                    printPostList();
                     getContents();
 
-                    total =    contentList.size();
+                    total = contentList.size();
                     done = 0;
-
-                    downloadFile();
+downloadFile();
                 }
                 arrayIndex++;
             }
             System.out.println("완료");
             MainPanel.jBtnCrawling.setIcon(MainPanel.imgComplete);
+            MainPanel.btnCondition = 3;
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public void printPostList(){
+        for(Post post : postList){
+            System.out.println("post url : "+post.url + "    post date : " + post.date);
         }
     }
 
@@ -146,20 +152,16 @@ public class Crawling extends Thread {
 
     void downloadFile() throws Exception {
         for(Content content : contentList) {
-            System.out.println("total : "+total + "     done : " + done + "    done/total : "+(done*100)/total);
-            MainPanel.jLPercent.setText(done+"/"+total);
-            MainPanel.jProgressBar.setValue((done*100)/total);
             done++;
             num++;
 
             newPostNum = content.postNum;
-            System.out.println("postNum = "+postNum + "      newPostNum = "+newPostNum);
             if(!postNum.equals(newPostNum)){
                 num = 1;
                 postNum = newPostNum;
             }
 
-            String extension = "";
+            String extension  = getExtension(content.urlString);
             folder = new File(saveLocation + SITE_NAME + "/");
             if (!folder.exists()) {
                 folder.mkdir();
@@ -172,9 +174,10 @@ public class Crawling extends Thread {
                 content.urlString = SITE_BASE_URL + content.urlString;
             }
 
-            System.out.print(content.urlString + " 다운로드 시작");
-
-            extension = getExtension(content.urlString);
+            System.out.println("url : " + content.urlString + " 다운로드 시작");
+            //jTProgressText setText, set Scroll Position
+            progressText = progressText + "\n"+saveLocation + SITE_NAME + "/" + postNum + "/" + postNum + "."+extension+"\n     ("+(done)+"/"+total+")     Downloading...";
+            MainPanel.jTProgressText.setCaretPosition(MainPanel.jTProgressText.getDocument().getLength());
 
             fileUrl = new URL(content.urlString);
             if (content.type == 1) {
@@ -182,13 +185,16 @@ public class Crawling extends Thread {
             } else {
                 downVideo(fileUrl, postNum,extension, saveLocation + SITE_NAME + "/" + postNum + "/");
             }
-            System.out.println(" ----->다운로드 완료");
 
+            progressText = progressText + "-----> Saved !";
+            MainPanel.jTProgressText.setText(progressText);
+            MainPanel.jTProgressText.setCaretPosition(MainPanel.jTProgressText.getDocument().getLength());
+            System.out.println("                             ----->다운로드 완료");
         }
     }
 
     void downloadImage(URL fileUrl, String postNum, String extension, String saveLocation) throws Exception {
-        System.out.println("postNum = "+postNum+"\n이미지 저장 : "+saveLocation + postNum + "-" + num + "." + extension);
+        System.out.print("이미지 저장 : "+saveLocation + postNum + "-" + num + "." + extension);
         byte[] b = new byte[1];
         URLConnection urlConnection = fileUrl.openConnection();
         urlConnection.connect();
@@ -201,7 +207,7 @@ public class Crawling extends Thread {
     }
 
     void downVideo(URL fileUrl,String postNum,  String extension, String saveLocation) throws Exception {
-        System.out.println("postNum = "+postNum+"\n동영상 저장 : "+saveLocation + postNum + "-" + num + "." + extension);
+        System.out.println("동영상 저장 : "+saveLocation + postNum + "-" + num + "." + extension);
         byte[] b = new byte[1];
         URLConnection urlConnection = fileUrl.openConnection();
         urlConnection.connect();
@@ -240,7 +246,6 @@ public class Crawling extends Thread {
     }
     public String getPostNum(String url){
         String postNum = url;
-        System.out.println("postNum = "+postNum);
         postNum = postNum.split("wr_id=")[1];
         postNum = postNum.split("&")[0];
         return postNum;
@@ -329,15 +334,16 @@ public class Crawling extends Thread {
         return PageDocument;
     }
 
-    public int inttoString(String a, int startNum, int endNum) {
+    public static int inttoString(String a, int startNum, int endNum) {
         return Integer.parseInt(a.substring(startNum, endNum));
     }
 
-    public boolean compareDate(String firstDate, String lastDate) {
+    public static boolean compareDate(String firstDate, String lastDate) {
         boolean result = true;
         int firstDateYear = inttoString(firstDate, 0, 4);
         int firstDateMonth = inttoString(firstDate, 5, 7);
         int firstDateDay = inttoString(firstDate, 8, 10);
+
         int lastDateYear = inttoString(lastDate, 0, 4);
         int lastDateMonth = inttoString(lastDate, 5, 7);
         int lastDateDay = inttoString(lastDate, 8, 10);
@@ -378,21 +384,24 @@ public class Crawling extends Thread {
 
         for (int page = 1; ; page++) {
             pList = getPostList(genreUrl, page);
-            if (compareDate(pList.get(POST_PER_PAGE - 1).date, endDate)) {
-                // bot>End
-                break;
-            } else if (compareDate(startDate, pList.get(0).date)) {
-                //start > top
-                break;
-            } else {
-                for (Post p : pList) {
-                    postList.add(p);
+            System.out.println("page : "+page + "  startDate : "+ startDate+"  endDate : "+ endDate);
+            System.out.println("topPage : "+ pList.get(0).date + "    "+"botPage : " + pList.get(POST_PER_PAGE - 1).date);
+            if(compareDate(pList.get(POST_PER_PAGE - 1).date, endDate)){
+                // page ++
+            }else{  // b < e
+                if(compareDate(startDate, pList.get(0).date)){
+                    break;
+                }else{
+                    for (Post p : pList) {
+                        postList.add(p);
+                    }
                 }
             }
         }
     }
 
     void filtOutPost() throws Exception{
+        System.out.println("fillOutPost()");
         List<Integer> removeIndex = new ArrayList<>();
         for (Post post : postList) {
             if (compareDate(post.date, endDate) || compareDate(startDate, post.date)) {
@@ -404,4 +413,8 @@ public class Crawling extends Thread {
             postList.remove(i);//걸러내기
         }
     }
+    public interface CallBackDown {
+        public void CallBackDown();
+    }
+
 }
