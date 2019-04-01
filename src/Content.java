@@ -1,7 +1,8 @@
 public class Content {
-    public Content(String urlString, int type) {
+    public Content(String urlString, int type,String postNum) {
         this.urlString = urlString;
         this.type = type;
+        this.postNum = postNum;
     }
     public Content(){
         this.urlString = "";
@@ -10,4 +11,5 @@ public class Content {
 
     String urlString;
     int type = 0;   // 1 : img , 2 : file
+    String postNum;
 }
