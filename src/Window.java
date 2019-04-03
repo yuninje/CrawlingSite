@@ -14,6 +14,4 @@ public class Window extends JFrame {
         this.setLocationRelativeTo(null);   // 모니터 가운데 띄우
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);     // 폼 종료시 프로그램 종료
     }
-
-
 }

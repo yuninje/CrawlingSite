@@ -82,6 +82,7 @@ public class MainPanel extends JPanel {
             public void callBackMethod() {
                 System.out.println("콜백함수");
                 jBtnCrawling.setIcon(imgDownloading);
+                jTProgressText.setFont(new Font("s",Font.BOLD,10));
             }
         };
 
@@ -314,7 +315,7 @@ public class MainPanel extends JPanel {
                 if (setLocationFlag ) {
                     startDate = jDatePickerSD.getJFormattedTextField().getText();
                     endDate = jDatePickerED.getJFormattedTextField().getText();
-                    if(!startDate.equals("") && !endDate.equals("") && Crawling.compareDate(startDate,endDate)) {
+                    if(!startDate.equals("") && !endDate.equals("") && Crawling.compareDate(startDate,endDate)!= 1) {
                         if(falseArray != cBCondition) {
                             switch (btnCondition) {
                                 case 1:
