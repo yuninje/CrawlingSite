@@ -1,59 +1,51 @@
-import org.jsoup.Connection;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Crawling extends Thread {
-    public static final int POST_PER_PAGE = 16;
-    public static final String SITE_BASE_URL = "http://manpeace.net/";
-    public static final String SITE_NAME = "manpeace";
+    private static final int POST_PER_PAGE = 16;
+    private static final String SITE_BASE_URL = "http://manpeace.net/";
+    private static final String SITE_NAME = "manpeace";
     private static final String LOGIN_SITE = "http://manpeace.net/bbs/login.php";
     private String[] genreArray_mampeace = {"스포츠", "연예인", "인물", "므흣", "유저짤"};
     private int[] genreNBCount = {0, 0, 0, 0, 1};
-    String[] genreUrlArray = {
+    private String[] genreUrlArray = {
             "http://manpeace.net/bbs/board.php?bo_table=ssam&page=1",
             "http://manpeace.net/bbs/board.php?bo_table=celeb&page=1",
             "http://manpeace.net/bbs/board.php?bo_table=grateful&page=1",
             "http://manpeace.net/bbs/board.php?bo_table=ggolit&page=1",
             "http://manpeace.net/bbs/board.php?bo_table=jap&page=1"
     };
-    private static String progressText = "";
-    static File folder;
 
-    List<Post> postList = new ArrayList<>();
-    List<Content> contentList = new ArrayList<>();
-    Content content;
-
-    String failedList = "Failed List...";
-    private static String loginID = "";
-    private static String loginPW = "";
-    private static String startDate = "";
-    private static String endDate = "";
-    private static String saveLocation = "";
-
-
-    String postNum = "";
-    String newPostNum = "";
-
-    int num;
-
-    int total;
-    int done = 0;
-    int failed = 0;
-    int arrayIndex;
-
-    public static WebDriver webDriver;
-    String chromeDriver = "C:\\Users\\yuninje\\Desktop\\INJE\\Coding\\Library\\Web driver\\chromedriver.exe";
+    private List<Post> postList = new ArrayList<>();
+    private List<Content> contentList = new ArrayList<>();
+    private Content content;
+    private File folder;
+    private String progressText = "";
+    private String loginID = "";
+    private String loginPW = "";
+    private String startDate = "";
+    private String endDate = "";
+    private String saveLocation = "";
+    private String failedList = "Failed List...";
+    private String postNum = "";
+    private String newPostNum = "";
+    private int num;
+    private int total;
+    private int done = 0;
+    private int arrayIndex;
+    private static WebDriver webDriver;
+    private String chromeDriver = "C:\\Users\\yuninje\\Desktop\\INJE\\Coding\\Library\\Web driver\\chromedriver.exe";
 
     public Crawling(MainPanel.CallBackEvent event, String loginID, String loginPW, String startDate, String endDate, String saveLocation) {
         System.out.println("Crawling 생성자함수");
@@ -100,7 +92,8 @@ public class Crawling extends Thread {
         }
     }
 
-    public void printPostList() {
+    // post 출력
+    private void printPostList() {
         int x = 0;
         for (Post post : postList) {
             System.out.println(x + "  -  post url : " + post.url + "    post date : " + post.date + "      post postNum : " + post.postNum);
@@ -108,12 +101,12 @@ public class Crawling extends Thread {
         }
     }
 
-    void setReset() {
+    private void setReset() {
         postList = new ArrayList<>();
         contentList = new ArrayList<>();
     }
 
-    List<Post> getPostList(String genreUrl, int page) throws Exception {
+    private List<Post> getPostList(String genreUrl, int page) {
         List<Post> pL = new ArrayList<>();
         Post p = new Post();
         webDriver.get(genreUrl + "&page=" + page);
@@ -121,9 +114,9 @@ public class Crawling extends Thread {
         List<WebElement> wETrList = wEPostBody.findElements(By.tagName("tr"));
         int j = 0;
         int nBCount;
-        if(page ==1) {
+        if (page == 1) {
             nBCount = genreNBCount[arrayIndex];
-        }else{
+        } else {
             nBCount = 0;
         }
         for (WebElement wETr : wETrList) {
@@ -153,11 +146,11 @@ public class Crawling extends Thread {
         return pL;
     }
 
-    String getExtension(String fileName) {
+    private String getExtension(String fileName) {
         return fileName.substring(fileName.length() - 6, fileName.length()).split("\\.")[1];
     }
 
-    void downloadFile(String genre) throws Exception {
+    private void downloadFile(String genre) {
         num = 1;
         for (Content content : contentList) {
             done++;
@@ -208,7 +201,7 @@ public class Crawling extends Thread {
         }
     }
 
-    void downloadImage(String contentUrl, String postNum, String extension, String saveLocation) throws Exception {
+    private void downloadImage(String contentUrl, String postNum, String extension, String saveLocation) {
         try {
             System.out.print("이미지 저장 : " + saveLocation + postNum + "-" + num + "." + extension);
             byte[] b = new byte[1];
@@ -228,7 +221,7 @@ public class Crawling extends Thread {
         }
     }
 
-    void downVideo(String contentUrl, String postNum, String extension, String saveLocation) {
+    private void downVideo(String contentUrl, String postNum, String extension, String saveLocation) {
         try {
             System.out.println("동영상 저장 : " + saveLocation + postNum + "-" + num + "." + extension);
             byte[] b = new byte[1];
@@ -248,7 +241,7 @@ public class Crawling extends Thread {
         }
     }
 
-    void getContents() {
+    private void getContents() {
         content = new Content();
         for (Post post : postList) {
             System.out.println("===================================================================================================================");
@@ -276,7 +269,7 @@ public class Crawling extends Thread {
         }
     }
 
-    public String getPostNum(String url) {
+    private String getPostNum(String url) {
         System.out.println("getPostNum : " + url);
         String postNum = url;
         postNum = postNum.split("wr_id=")[1];
@@ -284,15 +277,7 @@ public class Crawling extends Thread {
         return postNum;
     }
 
-    public static Document getDocument(String siteUrl) {
-        Document pageDocument;
-        webDriver.get(siteUrl);
-        String html = webDriver.getPageSource();
-        pageDocument = Jsoup.parse(html);
-        return pageDocument;
-    }
-
-    public static int inttoString(String a, int startNum, int endNum) {
+    private static int inttoString(String a, int startNum, int endNum) {
         return Integer.parseInt(a.substring(startNum, endNum));
     }
 
@@ -335,7 +320,7 @@ public class Crawling extends Thread {
         return result;
     }
 
-    public void setTotalPostList(String genreUrl) throws Exception {
+    private void setTotalPostList(String genreUrl) {
         System.out.println("setTotalPostList()");
         // 1페이지부터 포스트 만들기
         List<Post> pList;
@@ -356,7 +341,7 @@ public class Crawling extends Thread {
         }
     }
 
-    void filtOutPost() {
+    private void filtOutPost() {
         ArrayList<Integer> removeIndex = new ArrayList<>();
         int r = 0;
         for (Post post : postList) {
